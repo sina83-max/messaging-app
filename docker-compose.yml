@@ -5,6 +5,8 @@ services:
     image: postgres:15
     container_name: messaging_db
     restart: always
+    env_file:
+      - .env
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -15,12 +17,18 @@ services:
       - "5432:5432"
 
   api:
-    build: .
+    build:
+      context: .
+      args:
+        HTTP_PROXY: "http://172.24.17.18:3228"
+        HTTPS_PROXY: "http://172.24.17.18:3228"
+        NO_PROXY: "localhost,127.0.0.1,172.24.19.0/24,.kshfdev.net"
     container_name: messaging_api
     depends_on:
       - db
     environment:
       DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+
     ports:
       - "8000:8000"
     volumes:
