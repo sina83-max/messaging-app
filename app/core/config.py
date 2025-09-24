@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: str
     POSTGRES_DB: str
 
+
     ACCESS_TOKEN_EXPIRE_MINUTES: int
 
     class Config:
