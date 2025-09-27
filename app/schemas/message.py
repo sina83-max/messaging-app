@@ -39,8 +39,8 @@ class MessageResponseWithUsername(BaseModel):
 
 
 class MessageFilter(BaseModel):
+    keyword: Optional[str] = None
     sender_id: Optional[int] = None
-    receiver_id: Optional[int] = None
     unread_only: Optional[bool] = False
     date_from: Optional[datetime] = None
     date_to: Optional[datetime] = None

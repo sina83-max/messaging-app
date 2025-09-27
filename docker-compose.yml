@@ -19,10 +19,10 @@ services:
   api:
     build:
       context: .
-      args:
-        HTTP_PROXY: "http://172.24.17.18:3228"
-        HTTPS_PROXY: "http://172.24.17.18:3228"
-        NO_PROXY: "localhost,127.0.0.1,172.24.19.0/24,.kshfdev.net"
+#      args:
+#        HTTP_PROXY: "http://172.24.17.18:3228"
+#        HTTPS_PROXY: "http://172.24.17.18:3228"
+#        NO_PROXY: "localhost,127.0.0.1,172.24.19.0/24,.kshfdev.net"
     container_name: messaging_api
     depends_on:
       - db

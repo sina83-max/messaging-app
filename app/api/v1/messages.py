@@ -1,17 +1,43 @@
-from typing import List
+from datetime import datetime
+from typing import List, Optional
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Query
 from starlette import status
 
 from app.api.v1.users import user_dependency
 from app.crud.message import create_message, get_messages_for_user, generate_random_message, get_conversation, \
-    mark_as_delivered, mark_as_read
+    mark_as_delivered, mark_as_read, get_filtered_messages
 from app.crud.notification import create_notification
 from app.db.session import db_dependency
 from app.models.notification import Notification
+from app.models.user import User
 from app.schemas.message import MessageResponse, MessageCreate, MessageFilter
+from app.services.email import send_email
 
 router = APIRouter()
+
+
+@router.get("/filter")
+def filter_messages(
+    db: db_dependency,
+    current_user: user_dependency,
+    keyword: Optional[str] = Query(None, description="Search in message content"),
+    sender_id: Optional[int] = Query(None, description="Filter by sender"),
+    unread_only: Optional[bool] = Query(False, description="Only unread messages"),
+    date_from: Optional[datetime] = Query(None, description="Filter from this date"),
+    date_to: Optional[datetime] = Query(None, description="Filter until this date"),
+):
+
+    return get_filtered_messages(
+        db=db,
+        user_id=current_user.id,
+        keyword=keyword,
+        sender_id=sender_id,
+        unread_only=unread_only,
+        date_from=date_from,
+        date_to=date_to,
+    )
+
 
 
 @router.post("/", response_model=MessageResponse,
@@ -35,6 +61,17 @@ async def create_message_endpoint(message: MessageCreate,
             content=f"New message from {current_user.username}"
         )
     )
+    recipient = db.query(User).filter(User.id == message.receiver_id).first()
+    if recipient and recipient.email:
+        subject = "📩 New Message Received"
+        body = f"""
+            <h3>Hello {recipient.username},</h3>
+            <p>You have received a new message:</p>
+            <blockquote>{message.content}</blockquote>
+            <p>Login to your account to reply.</p>
+            """
+        await send_email(subject, [recipient.email], body)
+
     return message
 
 
@@ -91,5 +128,7 @@ async def mark_message_read_endpoint(db: db_dependency,
     )
 
     return message
+
+
 
 

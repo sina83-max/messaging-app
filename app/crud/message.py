@@ -94,3 +94,27 @@ def mark_as_read(db: db_dependency,
 
     return message
 
+
+def get_filtered_messages(
+    db: db_dependency,
+    user_id: int,
+    keyword: str = None,
+    sender_id: int = None,
+    unread_only: bool = False,
+    date_from=None,
+    date_to=None,
+):
+    query = db.query(Message).filter(Message.recipient_id == user_id)
+
+    if sender_id:
+        query = query.filter(Message.sender_id == sender_id)
+    if unread_only:
+        query = query.filter(Message.is_read == False)
+    if date_from:
+        query = query.filter(Message.created_at >= date_from)
+    if date_to:
+        query = query.filter(Message.created_at <= date_to)
+    if keyword:
+        query = query.filter(Message.content.ilike(f"%{keyword}%"))
+
+    return query.all()
