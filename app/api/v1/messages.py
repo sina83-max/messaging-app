@@ -61,7 +61,7 @@ async def create_message_endpoint(message: MessageCreate,
             content=f"New message from {current_user.username}"
         )
     )
-    recipient = db.query(User).filter(User.id == message.receiver_id).first()
+    recipient = db.query(User).filter(User.id == message.recipient_id).first()
     if recipient and recipient.email:
         subject = "📩 New Message Received"
         body = f"""
