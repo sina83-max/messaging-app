@@ -23,6 +23,7 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = ".env"
+
         model_config = {
             'extra': 'allow'
         }
