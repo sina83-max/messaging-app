@@ -17,7 +17,8 @@ class Settings(BaseSettings):
     MAIL_PORT: int
     MAIL_SERVER: str
     MAIL_FROM_NAME: str
-
+    # Redis setting
+    REDIS_URL: str
 
     ACCESS_TOKEN_EXPIRE_MINUTES: int
 
