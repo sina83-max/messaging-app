@@ -44,3 +44,6 @@ class ConnectionManager:
             if message["type"] == "message":
                 data = json.loads(message["data"])
                 await self.send_personal_message(data['recipient_id'], data)
+
+
+manager = ConnectionManager()

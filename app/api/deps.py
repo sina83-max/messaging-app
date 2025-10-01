@@ -37,3 +37,9 @@ def get_current_user(db: db_dependency,
         )
 
     return user
+
+
+def get_current_admin(user: Annotated[User, Depends(get_current_user)]):
+    if user.role != 'admin':
+        raise HTTPException(status_code=403, detail='admin privilege required')
+    return user

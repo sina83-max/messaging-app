@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.api.v1 import auth, users, messages, notifications, ws
+from app.api.v1 import auth, users, messages, notifications, ws, admin
 from app.db.base import Base, engine
 
 app = FastAPI(title="Messaging API")
@@ -23,4 +23,7 @@ app.include_router(notifications.router,
 app.include_router(ws.router,
                    prefix="/api/v1/ws",
                    tags=["ws"])
+app.include_router(admin.router,
+                   prefix="/api/v1/admin",
+                   tags=["admin"])
 
