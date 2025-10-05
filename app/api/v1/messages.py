@@ -5,10 +5,12 @@ from fastapi import APIRouter, HTTPException, Depends, Query
 from starlette import status
 
 from app.api.v1.users import user_dependency
+from app.core.rate_limiter import rate_limiter
 from app.crud.message import create_message, get_messages_for_user, generate_random_message, get_conversation, \
     mark_as_delivered, mark_as_read, get_filtered_messages
 from app.crud.notification import create_notification
 from app.db.session import db_dependency
+from app.models.message import Message
 from app.models.notification import Notification
 from app.models.user import User
 from app.schemas.message import MessageResponse, MessageCreate, MessageFilter
@@ -47,20 +49,27 @@ async def create_message_endpoint(message: MessageCreate,
                          current_user: user_dependency):
     if not current_user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+
+    await rate_limiter(current_user.id, "send_message")
+
+    # Create the message
     message = create_message(
         user=current_user,
         db=db,
         message=message
     )
 
+    # Create notification
     create_notification(
         db=db,
         notification=Notification(
-            user_id = message.recipient_id,
+            user_id=message.recipient_id,
             type="message",
             content=f"New message from {current_user.username}"
         )
     )
+
+    # Attempt to send email, but don't fail the request if it fails
     recipient = db.query(User).filter(User.id == message.recipient_id).first()
     if recipient and recipient.email:
         subject = "📩 New Message Received"
@@ -70,12 +79,18 @@ async def create_message_endpoint(message: MessageCreate,
             <blockquote>{message.content}</blockquote>
             <p>Login to your account to reply.</p>
             """
-        await send_email(subject, [recipient.email], body)
+        try:
+            await send_email(subject, [recipient.email], body)
+        except Exception as e:
+            # Optionally log the error instead of raising
+            print(f"Failed to send email: {e}")
 
+    # Return the message regardless of email success
     return message
 
 
-@router.get("/me", response_model=MessageResponse,
+
+@router.get("/me", response_model=List[MessageResponse],
             status_code=status.HTTP_200_OK)
 async def get_messages(db: db_dependency, current_user: user_dependency):
     messages = get_messages_for_user(
@@ -87,6 +102,37 @@ async def get_messages(db: db_dependency, current_user: user_dependency):
 @router.get("/random", status_code=status.HTTP_200_OK)
 async def get_random_message(db: db_dependency, current_user: user_dependency):
     return generate_random_message()
+
+
+@router.get("/history", response_model=List[MessageResponse], status_code=status.HTTP_200_OK)
+async def get_message_history(
+    db: db_dependency,
+    current_user: user_dependency       ,
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(20, ge=1, le=100, description="Items per page"),
+):
+    """
+    Get all messages where the user is sender or receiver, paginated.
+    """
+
+    # Calculate pagination offsets
+    skip = (page - 1) * page_size
+
+    # Query messages (both sent and received)
+    messages_query = (
+        db.query(Message)
+        .filter(
+            (Message.sender_id == current_user.id)
+            | (Message.recipient_id == current_user.id)
+        )
+        .order_by(Message.created_at.desc())
+    )
+
+    total_messages = messages_query.count()
+    messages = messages_query.offset(skip).limit(page_size).all()
+
+    return messages
+
 
 
 @router.get("/{user_id}", response_model=List[MessageResponse],
@@ -128,7 +174,6 @@ async def mark_message_read_endpoint(db: db_dependency,
     )
 
     return message
-
 
 
 

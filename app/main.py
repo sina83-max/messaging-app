@@ -1,4 +1,6 @@
 from fastapi import FastAPI
+from starlette.staticfiles import StaticFiles
+
 from app.api.v1 import auth, users, messages, notifications, ws, admin
 from app.db.base import Base, engine
 
@@ -6,6 +8,8 @@ app = FastAPI(title="Messaging API")
 
 Base.metadata.create_all(bind=engine)
 
+
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 
 app.include_router(auth.router,

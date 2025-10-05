@@ -12,4 +12,6 @@ python-multipart
 fastapi-mail
 redis[async]
 websockets
+websocket
 boto3
+aioredis

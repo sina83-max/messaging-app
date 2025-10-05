@@ -16,51 +16,50 @@ from app.schemas.user import UserResponse
 
 router = APIRouter()
 
-@router.post("/register", status_code=status.HTTP_201_CREATED,
-             response_model=UserResponse)
-async def create_user(db: db_dependency,
-                      username: str = Form(...),
-                      email: EmailStr = Form(...),
-                      password: str = Form(...),
-                      avatar: UploadFile | None = File(None)):
-    existing_user = db.query(User).filter(
-        User.username == username
-    ).first()
+@router.post("/register", response_model=UserResponse)
+async def create_user(
+    db: db_dependency,
+    username: str = Form(...),
+    email: EmailStr = Form(...),
+    password: str = Form(...),
+    avatar: UploadFile | None = File(None)
+):
+    # --- Check if user already exists ---
+    existing_user = db.query(User).filter(User.username == username).first()
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"User {username} already exists"
         )
 
+    # --- Create and save user without avatar first ---
     hashed_password = Hasher.hash_password(password)
-
-    user_model = User(
-        username=username,
-        email=email,
-        hashed_password=hashed_password,
-    )
-
-    if avatar:
-        try:
-            avatar_url = upload_avatar(avatar, user_id=0)
-            user_model.avatar_url = avatar_url
-        except Exception as e:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Avatar upload failed: {str(e)}"
-            )
+    user_model = User(username=username, email=email, hashed_password=hashed_password)
     db.add(user_model)
     db.commit()
     db.refresh(user_model)
 
-    if avatar:
-        user_model.avatar_url = upload_avatar(avatar,
-                                              user_id=user_model.id)
-        db.add(user_model)
-        db.commit()
-        db.refresh(user_model)
+    # --- Upload avatar only if provided ---
+    if avatar and avatar.filename.strip():
+        try:
+            avatar_url = upload_avatar(avatar, user_id=user_model.id)
+            user_model.avatar_url = avatar_url
+            db.add(user_model)
+            db.commit()
+            db.refresh(user_model)
+        except Exception as e:
+            # Do not block registration if MinIO is unavailable
+            print(f"Avatar upload failed: {e}")
+            pass
 
-    return {"msg": "User registered", "id": user_model.id, "avatar": user_model.avatar}
+    return {
+        "msg": "User registered successfully",
+        "id": user_model.id,
+        "username": user_model.username,
+        "email": user_model.email,
+        "avatar_url": user_model.avatar_url
+    }
+
 
 @router.post("/login", status_code=status.HTTP_200_OK, response_model=None)
 async def login_user(db: db_dependency,

@@ -12,7 +12,6 @@ class ConnectionManager:
         print("Create a list holding active connections", self.active_connections)
 
     async def connect(self, user_id: int, web_socket: WebSocket):
-        await web_socket.accept()
         if not self.active_connections.get(user_id):
             self.active_connections[user_id] = []
         self.active_connections[user_id] = web_socket
@@ -32,6 +31,11 @@ class ConnectionManager:
                 print("A personal message has been sent to: ", web_socket)
             except:
                 self.disconnect(user_id)
+
+    async def broadcast(self, message: dict):
+        for user_id, connection in self.active_connections.items():
+            await connection.send_text(json.dumps(message))
+
 
     async def publish_to_redis(self, channel: str, message: dict):
         await redis.publish(channel, json.dumps(message))

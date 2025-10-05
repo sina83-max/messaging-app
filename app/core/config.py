@@ -20,6 +20,11 @@ class Settings(BaseSettings):
     # Redis setting
     REDIS_URL: str
 
+    MINIO_ENDPOINT: str
+    MINIO_ACCESS_KEY: str
+    MINIO_SECRET_KEY: str
+    MINIO_BUCKET: str
+
     ACCESS_TOKEN_EXPIRE_MINUTES: int
 
     class Config:

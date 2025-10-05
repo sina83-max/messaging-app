@@ -47,7 +47,6 @@ services:
     restart: always
     ports:
       - "6379:6379"
-
   minio:
     image: minio/minio
     container_name: minio
@@ -60,7 +59,7 @@ services:
       MINIO_ROOT_PASSWORD: minio123
     volumes:
       - minio_data:/data
+
 volumes:
   postgres_data:
   minio_data:
-

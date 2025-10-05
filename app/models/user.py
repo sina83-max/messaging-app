@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column, Integer, String, DateTime, Boolean
 from app.db.base import Base
 
 class User(Base):
@@ -12,5 +12,6 @@ class User(Base):
     hashed_password = Column(String(100), nullable=False)
     avatar_url = Column(String(100), nullable=True)
     role = Column(String(50), nullable=False, default="user")
+    is_active = Column(Boolean, nullable=False, default=True)
     created_at = Column(DateTime, nullable=False, default=datetime.now(timezone.utc))
     updated_at = Column(DateTime, nullable=True)
