@@ -5,35 +5,48 @@ The project is fully **Dockerized** and uses **PostgreSQL** as the database back
 
 ---
 
-##  Features
+## 🚀 Features
 
-- 🔐 **User Authentication**
-  - Register and login with JWT tokens.
-  - Manage user profiles (username, avatar).
-- 💬 **Messaging**
-  - Send and receive messages.
-  - Random message generator API.
-  - Message history with delivery/read receipts.
-- 🔔 **Notifications**
-  - In-app notifications.
-  - Email notifications (via Gmail SMTP).
-- 🔎 **Search & Filters**
-  - Filter messages by:
-    - Keyword
-    - Sender ID
-    - Date
-    - Unread messages only
+### 🔐 Authentication & User Management
+- Register and login using **JWT tokens**
+- Retrieve and update user profiles
+- Automatically identify users over WebSocket connections
+- List all **currently active (online)** users
 
----
+### 💬 Messaging
+- Send and receive **real-time** messages via WebSocket  
+- All messages are **saved to the PostgreSQL database**
+- Retrieve **chat history** via REST API with **pagination**
+- See both **sent** and **received** messages in one view
+- Messages include sender, receiver, timestamp, and content
+
+### 🟢 Presence System
+- Track **online/offline** users dynamically
+- Real-time presence management for connected WebSocket clients
+
+### 🔍 Filters & Search (REST)
+- Filter messages by:
+  - Sender ID
+  - Receiver ID
+  - Keyword (text search)
+  - Date range
+  - Unread messages only
+
+### ⚡ Notifications (Optional)
+- Email notification system using **Gmail SMTP**
+- Configurable via `.env` file
 
 ##  Tech Stack
 
-- **Backend Framework:** FastAPI  
-- **Database:** PostgreSQL  
-- **ORM:** SQLAlchemy  
-- **Authentication:** JWT (JSON Web Tokens)  
-- **Notifications:** Email via SMTP (Gmail)  
-- **Containerization:** Docker & Docker Compose  
+| Component | Technology |
+|------------|-------------|
+| **Framework** | FastAPI |
+| **Database** | PostgreSQL |
+| **ORM** | SQLAlchemy |
+| **Authentication** | JWT (PyJWT / jose) |
+| **WebSocket** | FastAPI WebSocket |
+| **Containerization** | Docker & Docker Compose |
+| **Email (optional)** | Gmail SMTP |
 
 ---
 
