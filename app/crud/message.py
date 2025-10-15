@@ -118,3 +118,20 @@ def get_filtered_messages(
         query = query.filter(Message.content.ilike(f"%{keyword}%"))
 
     return query.all()
+
+
+def get_unread_messages(
+    db: db_dependency,
+    user_id: int
+):
+    query = db.query(Message).filter(
+        and_(
+            Message.recipient_id == user_id,
+            Message.is_read == False
+        )
+    ).order_by(Message.created_at.asc()).all()
+
+    return query
+
+
+

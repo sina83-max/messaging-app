@@ -8,7 +8,9 @@ from app.api.v1.users import user_dependency
 from app.core.connection_manager import ConnectionManager, manager
 from app.core.jwt import decode_access_token
 from app.core.presence_manager import set_user_online, set_user_offline
+from app.crud.message import get_unread_messages
 from app.db.session import db_dependency
+from app.models.message import Message
 from app.models.user import User
 
 router = APIRouter()
@@ -57,6 +59,17 @@ async def chat(web_socket: WebSocket):
     await set_user_online(user_id)
     await manager.broadcast({"event": "user_status", "user_id": user_id, "status": "online"})
 
+    unread_messages = get_unread_messages(db, user_id)
+    for message in unread_messages:
+        await web_socket.send_text(json.dumps({
+            "event": "new_message",
+            "sender_id": message.sender_id,
+            "content": message.content,
+            "timestamp": str(message.created_at)
+        }))
+        message.is_delivered = True
+        message.is_read = True
+    db.commit()
 
     asyncio.create_task(manager.subscribe_to_redis(f"user {user_id}"))
 
@@ -68,6 +81,27 @@ async def chat(web_socket: WebSocket):
             if "recipient_id" not in message_data or "content" not in message_data:
                 await web_socket.send_text(json.dumps({"error": "Invalid message format"}))
                 continue
+
+            recipient_id = message_data["recipient_id"]
+            content = message_data["content"]
+
+            new_message = Message(
+                sender_id=user_id,
+                recipient_id=recipient_id,
+                content=content,
+                is_read=False
+            )
+            db.add(new_message)
+            db.commit()
+            db.refresh(new_message)
+
+            await web_socket.send_text(json.dumps(
+                {
+                    "event": "message_saved",
+                    "message_id": new_message.id,
+                    "timestamp": str(new_message.created_at)
+                }
+            ))
 
             await manager.send_personal_message(message_data.get("recipient_id"), message_data)
             await manager.publish_to_redis(f"user {user_id}", message_data)

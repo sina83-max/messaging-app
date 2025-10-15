@@ -25,3 +25,9 @@ async def get_online_users() -> list[int]:
     Returns a list of online user IDs.
     """
     return [int(uid) for uid in await redis.hkeys(ONLINE_USERS_KEY)]
+
+async def is_user_online(user_id: int) -> bool:
+    """
+    Check if a user is online.
+    """
+    return await redis.sismember(ONLINE_USERS_KEY, str(user_id))
